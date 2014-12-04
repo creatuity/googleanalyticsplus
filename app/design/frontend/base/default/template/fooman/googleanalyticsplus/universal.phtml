@@ -28,57 +28,98 @@
         <?php if ($altUniversal):?>
             ga('<?php echo Fooman_GoogleAnalyticsPlus_Block_Universal::TRACKER_TWO_NAME?>.send', 'pageview', '<?php echo $this->getPageName(); ?>');
         <?php endif;?>
+        <?php if($this->getEnhancedEcommerce()):?>
+            ga('require', 'ec');
+        <?php endif;?>
 
     </script>
     <?php if($this->isSuccessPage()):?>
         <?php $order = $this->_getOrder();?>
-        <script>
-            /* <![CDATA[ */
-        ga('require', 'ecommerce', 'ecommerce.js');
-        <?php if ($altUniversal):?>
-            ga('<?php echo Fooman_GoogleAnalyticsPlus_Block_Universal::TRACKER_TWO_NAME?>.require', 'ecommerce', 'ecommerce.js');
-        <?php endif;?>
-
-            <?php $transactionDetails = "{
-            'id': '".$this->jsQuoteEscape($order->getIncrementId()) ."',
-            'affiliation': '". $this->jsQuoteEscape(Mage::app()->getStore()->getName()) ."',
-            'revenue': '". Mage::helper('googleanalyticsplus')->convert($order, 'grand_total') ."',
-            'shipping': '". Mage::helper('googleanalyticsplus')->convert($order, 'shipping_amount') ."',
-            'tax': '". Mage::helper('googleanalyticsplus')->convert($order, 'tax_amount') ."',
-            'currency': '". Mage::helper('googleanalyticsplus')->getTrackingCurrency($order) ."'
-            }";
+        <?php
+            if($this->getEnhancedEcommerce()):
+                // enhanced ecommerce code goes here
             ?>
+                <script>
+                    /* <![CDATA[ */
+                    <?php $transactionDetails = "{
+                       'id': '".$this->jsQuoteEscape($order->getIncrementId()) ."',
+                       'affiliation': '". $this->jsQuoteEscape(Mage::app()->getStore()->getName()) ."',
+                       'revenue': '". Mage::helper('googleanalyticsplus')->convert($order, 'grand_total') ."',
+                       'shipping': '". Mage::helper('googleanalyticsplus')->convert($order, 'shipping_amount') ."',
+                       'tax': '". Mage::helper('googleanalyticsplus')->convert($order, 'tax_amount') ."',
+                       'currency': '". Mage::helper('googleanalyticsplus')->getTrackingCurrency($order) ."'
+                       }";
+                   ?>
+                    ga('ec:setAction', 'purchase', <?php echo $transactionDetails?>);
+                    <?php foreach ($order->getAllVisibleItems() as $item):?>
 
-        ga('ecommerce:addTransaction', <?php echo $transactionDetails?>);
-        <?php if ($altUniversal):?>
-            ga('<?php echo Fooman_GoogleAnalyticsPlus_Block_Universal::TRACKER_TWO_NAME?>.ecommerce:addTransaction', <?php echo $transactionDetails?>);
-        <?php endif;?>
+                    <?php $itemDetails = "{
+                                'id': '".$this->jsQuoteEscape($item->getSku()) ."',
+                                'name': '". $this->jsQuoteEscape($item->getName()) ."',
+                                'sku': '". $this->jsQuoteEscape($item->getSku()) ."',
+                                'price': '". Mage::helper('googleanalyticsplus')->convert($item, 'price', $order->getOrderCurrencyCode()) ."',
+                                'quantity': '". (int)$item->getQtyOrdered() ."',
+                                'category': '". $this->jsQuoteEscape($this->getCategory($item)) ."'
+                                }";
+                    ?>
+                    ga('ec:addProduct', <?php echo $itemDetails?>);
+                    <?php endforeach;?>
+                    ga('send', 'pageview');
+                    /* ]]> */
+                </script>
+            <?php
+            else:
+                // ecommerce.js based code goes here
+            ?>
+                <script>
+                /* <![CDATA[ */
+                ga('require', 'ecommerce', 'ecommerce.js');
+                <?php if ($altUniversal):?>
+                    ga('<?php echo Fooman_GoogleAnalyticsPlus_Block_Universal::TRACKER_TWO_NAME?>.require', 'ecommerce', 'ecommerce.js');
+                <?php endif;?>
 
-
-        <?php foreach ($order->getAllVisibleItems() as $item):?>
-
-            <?php $itemDetails = "{
-                'id': '".$this->jsQuoteEscape($order->getIncrementId()) ."',
-                'name': '". $this->jsQuoteEscape($item->getName()) ."',
-                'sku': '". $this->jsQuoteEscape($item->getSku()) ."',
-                'price': '". Mage::helper('googleanalyticsplus')->convert($item, 'price', $order->getOrderCurrencyCode()) ."',
-                'quantity': '". (int)$item->getQtyOrdered() ."',
-                'category': '". $this->jsQuoteEscape($this->getCategory($item)) ."'
-                }";
+                 <?php $transactionDetails = "{
+                    'id': '".$this->jsQuoteEscape($order->getIncrementId()) ."',
+                    'affiliation': '". $this->jsQuoteEscape(Mage::app()->getStore()->getName()) ."',
+                    'revenue': '". Mage::helper('googleanalyticsplus')->convert($order, 'grand_total') ."',
+                    'shipping': '". Mage::helper('googleanalyticsplus')->convert($order, 'shipping_amount') ."',
+                    'tax': '". Mage::helper('googleanalyticsplus')->convert($order, 'tax_amount') ."',
+                    'currency': '". Mage::helper('googleanalyticsplus')->getTrackingCurrency($order) ."'
+                    }";
                 ?>
 
+                ga('ecommerce:addTransaction', <?php echo $transactionDetails?>);
+                <?php if ($altUniversal):?>
+                    ga('<?php echo Fooman_GoogleAnalyticsPlus_Block_Universal::TRACKER_TWO_NAME?>.ecommerce:addTransaction', <?php echo $transactionDetails?>);
+                <?php endif;?>
 
-            ga('ecommerce:addItem', <?php echo $itemDetails?>);
-            <?php if ($altUniversal):?>
-                ga('<?php echo Fooman_GoogleAnalyticsPlus_Block_Universal::TRACKER_TWO_NAME?>.ecommerce:addItem', <?php echo $itemDetails?>);
-            <?php endif;?>
-        <?php endforeach;?>
-        ga('ecommerce:send');
-        <?php if ($altUniversal):?>
-            ga('<?php echo Fooman_GoogleAnalyticsPlus_Block_Universal::TRACKER_TWO_NAME?>.ecommerce:send');
-        <?php endif;?>
-            /* ]]> */
-        </script>
+
+                <?php foreach ($order->getAllVisibleItems() as $item):?>
+
+                    <?php $itemDetails = "{
+                                'id': '".$this->jsQuoteEscape($order->getIncrementId()) ."',
+                                'name': '". $this->jsQuoteEscape($item->getName()) ."',
+                                'sku': '". $this->jsQuoteEscape($item->getSku()) ."',
+                                'price': '". Mage::helper('googleanalyticsplus')->convert($item, 'price', $order->getOrderCurrencyCode()) ."',
+                                'quantity': '". (int)$item->getQtyOrdered() ."',
+                                'category': '". $this->jsQuoteEscape($this->getCategory($item)) ."'
+                                }";
+                    ?>
+
+
+                    ga('ecommerce:addItem', <?php echo $itemDetails?>);
+                    <?php if ($altUniversal):?>
+                        ga('<?php echo Fooman_GoogleAnalyticsPlus_Block_Universal::TRACKER_TWO_NAME?>.ecommerce:addItem', <?php echo $itemDetails?>);
+                    <?php endif;?>
+                <?php endforeach;?>
+                ga('ecommerce:send');
+                <?php if ($altUniversal):?>
+                    ga('<?php echo Fooman_GoogleAnalyticsPlus_Block_Universal::TRACKER_TWO_NAME?>.ecommerce:send');
+                <?php endif;?>
+                /* ]]> */
+                </script>
+            <?php endif; ?>
+
     <?php endif; ?>
     <!-- End Google Analytics -->
 <?php endif; ?>
